@@ -4,12 +4,17 @@ import numpy as np
 import plotly.graph_objects as go
 from nsepython import nse_optionchain_scrapper
 
-# Disable SSL verification globally for NSE
+# Monkey-patch requests.get to include headers and bypass SSL issues
 original_get = requests.get
-def unsafe_get(*args, **kwargs):
-    kwargs['verify'] = False
+def custom_get(*args, **kwargs):
+    kwargs['verify'] = False  # Disable SSL verification
+    kwargs.setdefault('headers', {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                      '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    })
     return original_get(*args, **kwargs)
-requests.get = unsafe_get
+
+requests.get = custom_get
 
 st.set_page_config(page_title="Iron Condor Visualizer", layout="wide")
 st.title("📊 Safe Strangle Option Selling Strategy (Live from NSE)")
