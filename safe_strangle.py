@@ -10,7 +10,7 @@ def custom_get(*args, **kwargs):
     kwargs['verify'] = False  # Disable SSL verification
     kwargs.setdefault('headers', {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                      '(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                      '(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'
     })
     return original_get(*args, **kwargs)
 
