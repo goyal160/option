@@ -12,7 +12,7 @@ def unsafe_get(*args, **kwargs):
 requests.get = unsafe_get
 
 st.set_page_config(page_title="Iron Condor Visualizer", layout="wide")
-st.title("📊 Iron Condor Strategy Visualizer (Live from NSE)")
+st.title("📊 Safe Strangle Option Selling Strategy (Live from NSE)")
 
 # Layout columns
 col1, col2 = st.columns([1, 2])
