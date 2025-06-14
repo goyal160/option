@@ -22,7 +22,13 @@ with col1:
 
     try:
         data = nse_optionchain_scrapper(symbol)
+
+        if not data or 'records' not in data or 'underlyingValue' not in data['records']:
+            st.error("⚠️ Failed to fetch live data from NSE. Please retry after a few seconds.")
+            st.stop()
+
         spot = data['records']['underlyingValue']
+
         expiries = data['records']['expiryDates']
         expiry = st.selectbox("Select Expiry Date", expiries)
 
