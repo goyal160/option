@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="Iron Condor Visualizer", layout="wide")
 st.title("📊 Iron Condor Strategy Visualizer (Live from NSE API)")
 
-API_URL = "https://https://option-jw5p.onrender.com/get_option_chain"  # Replace with your actual API endpoint
+API_URL = "https://option-jw5p.onrender.com/get_option_chain"  # Replace with your actual API endpoint
 
 # Layout columns
 col1, col2 = st.columns([1, 2])
