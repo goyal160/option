@@ -15,8 +15,8 @@ NSE_HEADERS = {
     "Referer": "https://www.nseindia.com/"
 }
 
-@app.route('/option_chain', methods=['GET'])
-def option_chain():
+@app.route('/get_option_chain', methods=['GET'])
+def get_option_chain():
     symbol = request.args.get('symbol', 'NIFTY')
     url = f'https://www.nseindia.com/api/option-chain-indices?symbol={symbol.upper()}'
     
