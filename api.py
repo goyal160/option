@@ -29,11 +29,14 @@ def get_option_chain():
         session = requests.Session()
         session.headers.update(NSE_HEADERS)
 
-        # Step 1: Set cookies via NSE homepage
-        session.get("https://www.nseindia.com", timeout=5, verify=False)
+        print("⏳ Setting NSE cookies...")
+        home_resp = session.get("https://www.nseindia.com", timeout=5, verify=False)
+        print("🏠 Home page status:", home_resp.status_code)
 
-        # Step 2: Get live option chain
+        print("🌐 Fetching option chain...")
         response = session.get(url, timeout=10, verify=False)
+        print("📡 Option chain status:", response.status_code)
+        print("📄 Option chain raw text (truncated):", response.text[:200])
 
         if response.status_code == 200:
             return jsonify(response.json())
@@ -41,6 +44,7 @@ def get_option_chain():
             return jsonify({"error": f"NSE returned status code {response.status_code}"}), 500
 
     except Exception as e:
+        print("❌ Exception occurred:", str(e))
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
 
 if __name__ == '__main__':
