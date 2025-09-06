@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import matplotlib.pyplot as plt
 import urllib3
+import mibian
 
 # Suppress SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -83,6 +84,49 @@ def get_option_chain(symbol):
 
     return pd.DataFrame(records), spot_price
 
+# ---------- Add Greeks ----------
+def add_greeks(df, spot, r=10, days=7):
+    """
+    df : option chain DataFrame
+    spot : current index value
+    r : interest rate (%)
+    days : days to expiry (default 7)
+    """
+    delta_list, gamma_list, theta_list, vega_list = [], [], [], []
+    T = days  # time to expiry in days
+
+    for _, row in df.iterrows():
+        try:
+            if row["IV"] > 0 and row["LTP"] > 0:
+                bs = mibian.BS([spot, row["strike"], r, T],
+                               volatility=row["IV"])
+                if row["type"] == "CE":
+                    delta_list.append(bs.callDelta)
+                    gamma_list.append(bs.gamma)
+                    theta_list.append(bs.callTheta)
+                    vega_list.append(bs.vega)
+                else:
+                    delta_list.append(bs.putDelta)
+                    gamma_list.append(bs.gamma)
+                    theta_list.append(bs.putTheta)
+                    vega_list.append(bs.vega)
+            else:
+                delta_list.append(None)
+                gamma_list.append(None)
+                theta_list.append(None)
+                vega_list.append(None)
+        except:
+            delta_list.append(None)
+            gamma_list.append(None)
+            theta_list.append(None)
+            vega_list.append(None)
+
+    df["Delta"] = delta_list
+    df["Gamma"] = gamma_list
+    df["Theta"] = theta_list
+    df["Vega"] = vega_list
+    return df
+
 # ---------- Add Signal Logic ----------
 def add_signals(df):
     signals = []
@@ -104,6 +148,15 @@ def add_signals(df):
     df["Signal"] = signals
     return df
 
+# ---------- Heatmap Styling ----------
+def color_signals(val):
+    if "Bullish" in val:
+        return "background-color: lightgreen; color: black;"
+    elif "Bearish" in val:
+        return "background-color: salmon; color: black;"
+    else:
+        return "background-color: lightgrey; color: black;"
+
 # ---------- Streamlit UI ----------
 st.set_page_config(layout="wide")
 st.title("📊 NSE Option Chain Dashboard")
@@ -121,6 +174,9 @@ try:
 
     # Limit strikes ±1000 around spot
     df = df[(df["strike"] >= spot - 1000) & (df["strike"] <= spot + 1000)]
+
+    # Add Greeks
+    df = add_greeks(df, spot)
 
     # Add signals
     df = add_signals(df)
@@ -140,18 +196,30 @@ try:
         col3.metric("Strongest Support", f"{int(top_support['strike'])} PE (OI={top_support['OI']})")
 
     # Table
-    st.subheader("Option Chain Data")
-    st.dataframe(df.sort_values(["strike", "type"]).reset_index(drop=True), height=500)
+    st.subheader("Option Chain Data (with Greeks)")
+    styled_df = df.sort_values(["strike", "type"]).reset_index(drop=True).style.applymap(color_signals, subset=["Signal"])
+    st.dataframe(styled_df, height=500)
 
     # ---------- Charts ----------
     st.subheader("Charts")
 
-    # OI Line Chart
+    # OI Line Chart with Shading
     fig1, ax1 = plt.subplots(figsize=(12, 5))
     ax1.plot(ce_data["strike"], ce_data["OI"], color="red", marker="o", label="Call OI")
     ax1.plot(pe_data["strike"], pe_data["OI"], color="green", marker="o", label="Put OI")
+
+    # Shading logic
+    for i in range(len(ce_data)):
+        strike = ce_data.iloc[i]["strike"]
+        co = ce_data.iloc[i]["OI"]
+        po = pe_data.iloc[i]["OI"]
+        if po > co:
+            ax1.fill_between([strike], co, po, color="green", alpha=0.2)
+        else:
+            ax1.fill_between([strike], po, co, color="red", alpha=0.2)
+
     ax1.axvline(x=spot, color="blue", linestyle="--", label="Spot Price")
-    ax1.set_title("Call vs Put Open Interest (Line Chart)")
+    ax1.set_title("Call vs Put Open Interest (Line Chart with Shading)")
     ax1.set_xlabel("Strike Price")
     ax1.set_ylabel("Open Interest")
     ax1.legend()
